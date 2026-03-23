@@ -21,7 +21,7 @@ class Order extends Model
         'driver_id',
 
         'lifecycle_status',
-        'restaurant_decision_status',
+        'business_decision_status',
         'delivery_status',
         'payment_status',
 
@@ -39,7 +39,7 @@ class Order extends Model
         'total' => 'decimal:2',
 
         'lifecycle_status' => OrderLifecycleStatus::class,
-        'restaurant_decision_status' => RestaurantDecisionStatus::class,
+        'business_decision_status' => RestaurantDecisionStatus::class,
         'delivery_status' => DeliveryStatus::class,
         'payment_status' => PaymentStatus::class,
     ];
