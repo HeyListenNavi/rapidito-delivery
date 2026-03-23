@@ -37,6 +37,14 @@ class Business extends Model
         'accepts_pickup',
     ];
 
+    protected $casts = [
+        'is_open' => 'boolean',
+        'accepts_delivery' => 'boolean',
+        'accepts_pickup' => 'boolean',
+        'lat' => 'float',
+        'lng' => 'float',
+    ];
+
     public function products()
     {
         return $this->hasMany(Product::class, "business_id");
