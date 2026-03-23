@@ -18,7 +18,7 @@ class Category extends Model
         'is_active' => 'boolean',
     ];
 
-    public function restaurants()
+    public function businesses()
     {
         return $this->hasMany(Business::class, "category_id");
     }
