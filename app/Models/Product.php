@@ -30,7 +30,7 @@ class Product extends Model
      | Relaciones
      ====================== */
 
-    public function businesses()
+    public function business()
     {
         return $this->belongsTo(Business::class);
     }
