@@ -2,14 +2,10 @@
 
 namespace App\Filament\Resources\Categories\Schemas;
 
-use Filament\Schemas\Schema;
-use Filament\Schemas\Components\Section;
-
 use Filament\Forms\Components\TextInput;
-use Filament\Forms\Components\Toggle;
-use Filament\Forms\Components\FileUpload;
-
-use Illuminate\Support\Str;
+use Filament\Forms\Components\ToggleButtons;
+use Filament\Schemas\Components\Section;
+use Filament\Schemas\Schema;
 
 class CategoryForm
 {
@@ -18,27 +14,31 @@ class CategoryForm
         return $schema
             ->columns(1)
             ->components([
-                Section::make('Información')
-                    ->columns(2)
-                    ->schema([
-                        FileUpload::make('icon_path')
-                            ->label('Icono')
-                            ->image()
-                            ->directory('categories/icons')
-                            ->imagePreviewHeight(200),
+                TextInput::make('name')
+                    ->label('Nombre')
+                    ->required()
+                    ->maxLength(255)
+                    ->unique(ignoreRecord: true),
 
-                        Section::make()
-                            ->schema([
-                                TextInput::make('name')
-                                    ->label('Nombre')
-                                    ->required()
-                                    ->maxLength(20),
-
-                                Toggle::make('is_active')
-                                    ->label('Activo')
-                                    ->default(true),
-                            ]),
-                    ]),
+                ToggleButtons::make('is_active')
+                    ->label('Visibilidad Global')
+                    ->helperText('Si se oculta, ningún restaurante de esta categoría se mostrará')
+                    ->options([
+                        'true' => 'Público',
+                        'false' => 'Oculto',
+                    ])
+                    ->colors([
+                        'true' => 'success',
+                        'false' => 'warning',
+                    ])
+                    ->icons([
+                        'true' => 'heroicon-m-eye',
+                        'false' => 'heroicon-m-eye-slash',
+                    ])
+                    ->inline()
+                    ->formatStateUsing(fn($state) => $state ? 'true' : 'false')
+                    ->dehydrateStateUsing(fn($state) => $state === 'true')
+                    ->default('true'),
             ]);
     }
 }
