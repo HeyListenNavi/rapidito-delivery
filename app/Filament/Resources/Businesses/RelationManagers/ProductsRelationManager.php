@@ -2,30 +2,24 @@
 
 namespace App\Filament\Resources\Businesses\RelationManagers;
 
-use Filament\Actions\AssociateAction;
 use Filament\Actions\BulkActionGroup;
 use Filament\Actions\CreateAction;
 use Filament\Actions\DeleteAction;
 use Filament\Actions\DeleteBulkAction;
-use Filament\Actions\DissociateAction;
-use Filament\Actions\DissociateBulkAction;
 use Filament\Actions\EditAction;
-
-use Filament\Schemas\Components\Section;
-use Filament\Forms\Components\TextInput;
-use Filament\Forms\Components\Textarea;
-use Filament\Forms\Components\Toggle;
 use Filament\Forms\Components\FileUpload;
-
+use Filament\Forms\Components\Select;
+use Filament\Forms\Components\Textarea;
+use Filament\Forms\Components\TextInput;
+use Filament\Forms\Components\ToggleButtons;
+use Filament\Resources\RelationManagers\RelationManager;
+use Filament\Schemas\Components\Group;
+use Filament\Schemas\Components\Section;
 use Filament\Schemas\Schema;
-
+use Filament\Tables\Columns\ImageColumn;
 use Filament\Tables\Columns\TextColumn;
 use Filament\Tables\Columns\ToggleColumn;
-use Filament\Tables\Columns\ImageColumn;
-
 use Filament\Tables\Table;
-
-use Filament\Resources\RelationManagers\RelationManager;
 
 class ProductsRelationManager extends RelationManager
 {
@@ -34,61 +28,108 @@ class ProductsRelationManager extends RelationManager
     public function form(Schema $schema): Schema
     {
         return $schema
+            ->columns(3)
             ->components([
-                Section::make('Información General')
-                    ->icon('heroicon-o-information-circle')
+                Group::make()
+                    ->columnSpan(2)
                     ->schema([
-                    
-                        TextInput::make('name')
-                            ->label('Nombre del producto')
-                            ->required()
-                            ->maxLength(255)
-                            ->columnSpanFull(),
+                        Section::make('Detalles del Platillo')
+                            ->schema([
+                                TextInput::make('name')
+                                    ->label('Nombre del producto')
+                                    ->required()
+                                    ->maxLength(255)
+                                    ->columnSpanFull(),
 
-                        Textarea::make('description')
-                            ->label('Descripción')
-                            ->rows(3)
-                            ->columnSpanFull(),
-                    ])
-                    ->columns(2),
+                                Textarea::make('description')
+                                    ->label('Descripción para el cliente')
+                                    ->helperText('Explica los ingredientes principales. Una buena descripción aumenta las ventas.')
+                                    ->rows(3)
+                                    ->autosize()
+                                    ->columnSpanFull(),
 
-                Section::make('Precio y Orden')
-                    ->icon('heroicon-o-currency-dollar')
+                                TextInput::make('price')
+                                    ->label('Precio')
+                                    ->numeric()
+                                    ->prefix('$')
+                                    ->inputMode('decimal')
+                                    ->required(),
+                            ]),
+
+                        Section::make('Fotografía')
+                            ->description('Las fotos deben ser cuadradas. Se recomienda quitar el fondo del producto para mantener un diseño limpio en el menú de la app.')
+                            ->schema([
+                                FileUpload::make('image_path')
+                                    ->hiddenLabel()
+                                    ->image()
+                                    ->disk(fn() => config('filesystems.default'))
+                                    ->directory('products')
+                                    ->imageEditor()
+                                    ->imageAspectRatio('1:1')
+                                    ->automaticallyOpenImageEditorForAspectRatio()
+                                    ->automaticallyCropImagesToAspectRatio('1:1')
+                                    ->automaticallyResizeImagesToWidth('600')
+                                    ->automaticallyResizeImagesToHeight('600'),
+                            ]),
+                    ]),
+
+                Group::make()
+                    ->columnSpan(['default' => 3, 'md' => 1])
                     ->schema([
-                        TextInput::make('price')
-                            ->label('Precio')
-                            ->numeric()
-                            ->prefix('$')
-                            ->required(),
+                        Section::make('Clasificación')
+                            ->schema([
+                                Select::make('product_category_id')
+                                    ->label('Categoría de Menú')
+                                    ->relationship(
+                                        name: 'category',
+                                        titleAttribute: 'name',
+                                        modifyQueryUsing: fn($query, $livewire) => $query->where('business_id', $livewire->ownerRecord->id)
+                                    )
+                                    ->searchable()
+                                    ->preload()
+                                    ->required(),
+                            ]),
 
-                        TextInput::make('sort_order')
-                            ->label('Orden')
-                            ->numeric()
-                            ->default(0),
-                    ])
-                    ->columns(2),
+                        Section::make('Estado Operativo')
+                            ->schema([
+                                ToggleButtons::make('is_active')
+                                    ->label('Visibilidad en Menú')
+                                    ->options([
+                                        'true' => 'Público',
+                                        'false' => 'Oculto',
+                                    ])
+                                    ->colors([
+                                        'true' => 'success',
+                                        'false' => 'warning',
+                                    ])
+                                    ->icons([
+                                        'true' => 'heroicon-m-eye',
+                                        'false' => 'heroicon-m-eye-slash',
+                                    ])
+                                    ->inline()
+                                    ->formatStateUsing(fn($state) => $state ? 'true' : 'false')
+                                    ->dehydrateStateUsing(fn($state) => $state === 'true')
+                                    ->default('true'),
 
-                Section::make('Estado')
-                    ->icon('heroicon-o-check-badge')
-                    ->schema([
-                        Toggle::make('is_active')
-                            ->label('Activo')
-                            ->default(true),
-
-                        Toggle::make('is_available')
-                            ->label('Disponible')
-                            ->default(true),
-                    ])
-                    ->columns(2),
-
-                Section::make('Imagen')
-                    ->icon('heroicon-o-photo')
-                    ->schema([
-                        FileUpload::make('image_path')
-                            ->label('Imagen del producto')
-                            ->image()
-                            ->directory('products')
-                            ->imagePreviewHeight('150'),
+                                ToggleButtons::make('is_available')
+                                    ->label('Inventario (Stock)')
+                                    ->options([
+                                        'true' => 'En Stock',
+                                        'false' => 'Agotado',
+                                    ])
+                                    ->colors([
+                                        'true' => 'primary',
+                                        'false' => 'danger',
+                                    ])
+                                    ->icons([
+                                        'true' => 'heroicon-m-check-circle',
+                                        'false' => 'heroicon-m-x-circle',
+                                    ])
+                                    ->inline()
+                                    ->formatStateUsing(fn($state) => $state ? 'true' : 'false')
+                                    ->dehydrateStateUsing(fn($state) => $state === 'true')
+                                    ->default('true'),
+                            ]),
                     ]),
             ]);
     }
@@ -97,16 +138,24 @@ class ProductsRelationManager extends RelationManager
     {
         return $table
             ->recordTitleAttribute('name')
+            ->reorderable('sort_order')
             ->defaultSort('sort_order')
             ->columns([
                 ImageColumn::make('image_path')
-                    ->label('Imagen')
+                    ->label('')
                     ->square()
-                    ->size(50),
+                    ->imageHeight(80),
 
                 TextColumn::make('name')
                     ->label('Producto')
                     ->searchable()
+                    ->weight('bold')
+                    ->description(fn($record) => str($record->description)->limit(40)),
+
+                TextColumn::make('category.name')
+                    ->label('Categoría')
+                    ->badge()
+                    ->color('gray')
                     ->sortable(),
 
                 TextColumn::make('price')
@@ -114,24 +163,30 @@ class ProductsRelationManager extends RelationManager
                     ->money('MXN')
                     ->sortable(),
 
-                TextColumn::make('sort_order')
-                    ->label('Orden')
-                    ->sortable(),
+                ToggleColumn::make('is_available')
+                    ->label('¿Hay stock?')
+                    ->onColor('success')
+                    ->offColor('gray')
+                    ->onIcon('heroicon-c-check')
+                    ->offIcon('heroicon-c-x-mark')
+                    ->toggleable(isToggledHiddenByDefault: true),
 
                 ToggleColumn::make('is_active')
-                    ->label('Activo'),
-
-                ToggleColumn::make('is_available')
-                    ->label('Disponible'),
+                    ->label('Público')
+                    ->onColor('success')
+                    ->offColor('gray')
+                    ->onIcon('heroicon-c-eye')
+                    ->offIcon('heroicon-c-eye-slash')
+                    ->toggleable(isToggledHiddenByDefault: true),
             ])
-            ->filters([
-                //
-            ])
+            ->filters([])
             ->headerActions([
-                CreateAction::make(),
+                CreateAction::make()
+                    ->slideOver(),
             ])
             ->recordActions([
-                EditAction::make(),
+                EditAction::make()
+                    ->slideOver(),
                 DeleteAction::make(),
             ])
             ->toolbarActions([
