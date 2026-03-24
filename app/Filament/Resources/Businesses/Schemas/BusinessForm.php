@@ -2,153 +2,188 @@
 
 namespace App\Filament\Resources\Businesses\Schemas;
 
-use Filament\Schemas\Schema;
-use Filament\Schemas\Components\Section;
-use Filament\Forms\Components\TextInput;
-use Filament\Forms\Components\Select;
-use Filament\Forms\Components\Toggle;
+use Filament\Forms\Components\Checkbox;
 use Filament\Forms\Components\FileUpload;
+use Filament\Forms\Components\Select;
+use Filament\Forms\Components\TextInput;
+use Filament\Forms\Components\ToggleButtons;
+use Filament\Schemas\Components\Fieldset;
+use Filament\Schemas\Components\Grid;
+use Filament\Schemas\Components\Group;
+use Filament\Schemas\Components\Section;
+use Filament\Schemas\Schema;
 use Illuminate\Support\Str;
-use League\Flysystem\Visibility;
 
 class BusinessForm
 {
     public static function configure(Schema $schema): Schema
     {
         return $schema
-            ->columns(1)    
+            ->columns(3)
             ->components([
-                Section::make('Banner')
+                Group::make()
                     ->schema([
-                        FileUpload::make('banner_path')
-                            ->label('Banner')
-                            ->image()
-                            ->disk("r2")
-                            ->openable()
-                            ->visibility("private")
-                            ->directory('restaurants/banner'),
-                    ]),
-
-                Section::make('Información general')
-                    ->columns(2)
-                    ->schema([
-                        FileUpload::make('logo_path')
-                            ->label('Logo')
-                            ->image()
-                            ->openable()
-                            ->disk( fn () => config('filesystems.default') )
-                            //->visibility("private")
-                            ->directory('restaurants/logos'),
-
-                        Section::make()
+                        Section::make('Apariencia del Negocio')
+                            ->description('Configura cómo se verá el restaurante en la aplicación móvil.')
+                            ->columns(4)
                             ->schema([
-                                TextInput::make('name')
-                                    ->label('Nombre')
-                                    ->required()
-                                    ->maxLength(255)
-                                    ->live(onBlur: true)
-                                    ->afterStateUpdated(
-                                        fn ($state, callable $set) =>
-                                            $set('slug', Str::slug($state))
-                                    ),
+                                FileUpload::make('logo_path')
+                                    ->label('Logo del negocio')
+                                    ->image()
+                                    ->openable()
+                                    ->disk(fn() => config('filesystems.default'))
+                                    ->directory('restaurants/logos')
+                                    ->imageEditor()
+                                    ->imageAspectRatio('1:1')
+                                    ->automaticallyOpenImageEditorForAspectRatio()
+                                    ->automaticallyCropImagesToAspectRatio('1:1')
+                                    ->automaticallyResizeImagesToWidth('300')
+                                    ->automaticallyResizeImagesToHeight('300'),
 
-                                TextInput::make('slug')
-                                    ->label('Slug')
-                                    ->required(),
+                                FileUpload::make('banner_path')
+                                    ->label('Banner Promocional')
+                                    ->image()
+                                    ->openable()
+                                    ->disk(fn() => config('filesystems.default'))
+                                    ->directory('restaurants/banners')
+                                    ->imageEditor()
+                                    ->imageAspectRatio('3:1')
+                                    ->automaticallyOpenImageEditorForAspectRatio()
+                                    ->automaticallyCropImagesToAspectRatio('3:1')
+                                    ->automaticallyResizeImagesToWidth('700')
+                                    ->automaticallyResizeImagesToHeight('300')
+                                    ->columnSpan(3),
+                            ]),
 
-                                TextInput::make('phone')
-                                    ->label('Telefono')
-                                    ->required(),
-
-                                TextInput::make('email')
-                                    ->label('Correo')
-                                    ->required(),
-
-                                TextInput::make('web_site')
-                                    ->label('Sitio Web')
-                                    ->required(),
-
+                        Section::make('Clasificación y Búsqueda')
+                            ->columns(2)
+                            ->schema([
                                 Select::make('category_id')
-                                    ->label('Categoría')
+                                    ->label('Categoría principal')
                                     ->relationship('category', 'name')
                                     ->searchable()
                                     ->preload()
                                     ->required(),
 
                                 Select::make('tags')
-                                    ->label('Tags')
+                                    ->label('Etiquetas (Keywords)')
                                     ->relationship('tags', 'name')
                                     ->multiple()
                                     ->searchable()
                                     ->preload(),
                             ]),
-                    ]),
 
-                Section::make('Ubicación')
-                    ->columns(2)
+                        Section::make('Ubicación y Logística')
+                            ->description('Datos críticos para el cálculo de rutas y tarifas.')
+                            ->columns(2)
+                            ->schema([
+                                TextInput::make('address')
+                                    ->label('Dirección exacta')
+                                    ->required()
+                                    ->columnSpanFull(),
+
+                                Select::make('city_id')
+                                    ->label('Ciudad')
+                                    ->relationship('city', 'name')
+                                    ->searchable()
+                                    ->preload()
+                                    ->required(),
+
+                                TextInput::make('postal_code')
+                                    ->label('Código postal')
+                                    ->numeric(),
+
+                                TextInput::make('google_maps_url')
+                                    ->label('Enlace de Google Maps')
+                                    ->url()
+                                    ->prefixIcon('heroicon-m-map-pin')
+                                    ->columnSpanFull(),
+
+                                Fieldset::make('Coordenadas de Entrega')
+                                    ->columnSpanFull()
+                                    ->schema([
+                                        TextInput::make('lat')
+                                            ->label('Latitud')
+                                            ->numeric()
+                                            ->inputMode('decimal')
+                                            ->required(),
+
+                                        TextInput::make('lng')
+                                            ->label('Longitud')
+                                            ->numeric()
+                                            ->inputMode('decimal')
+                                            ->required(),
+                                    ]),
+
+                                FileUpload::make('reference_image')
+                                    ->label('Foto de fachada')
+                                    ->image()
+                                    ->directory('restaurants/references')
+                                    ->columnSpanFull(),
+                            ]),
+                    ])
+                    ->columnSpan(2),
+
+                Group::make()
                     ->schema([
-                        TextInput::make('address')
-                            ->label('Dirección'),
+                        Section::make('Identidad')
+                            ->schema([
+                                TextInput::make('name')
+                                    ->label('Nombre comercial')
+                                    ->required()
+                                    ->live(onBlur: true)
+                                    ->afterStateUpdated(fn($state, $set) => $set('slug', Str::slug($state))),
 
-                        Select::make('city_id')
-                            ->label('Ciudad')
-                            ->relationship('city', 'name')
-                            ->searchable()
-                            ->preload()
-                            ->required(),
+                                TextInput::make('slug')
+                                    ->label('URL (Slug)')
+                                    ->disabled()
+                                    ->dehydrated()
+                                    ->required(),
+                            ]),
 
-                        TextInput::make('state')
-                            ->label('Estado / Provincia'),
+                        Section::make('Estado Operativo')
+                            ->schema([
+                                ToggleButtons::make('status')
+                                    ->label('Visibilidad')
+                                    ->options(['active' => 'Público', 'inactive' => 'Oculto'])
+                                    ->colors(['active' => 'success', 'inactive' => 'warning'])
+                                    ->icons(['active' => 'heroicon-m-eye', 'inactive' => 'heroicon-m-eye-slash'])
+                                    ->inline(),
 
-                        TextInput::make('postal_code')
-                            ->label('Código postal'),
+                                ToggleButtons::make('is_open')
+                                    ->label('¿Abierto ahora?')
+                                    ->options([1 => 'Abierto', 0 => 'Cerrado'])
+                                    ->colors([1 => 'success', 0 => 'gray'])
+                                    ->icons([1 => 'heroicon-m-building-storefront', 0 => 'heroicon-m-moon'])
+                                    ->inline(),
+                            ]),
 
-                        TextInput::make('country')
-                            ->label('País')
-                            ->default('México'),
+                        Section::make('Canales')
+                            ->schema([
+                                Checkbox::make('accepts_delivery')->label('Acepta Delivery'),
+                                Checkbox::make('accepts_pickup')->label('Acepta Pickup'),
+                            ]),
 
-                        TextInput::make('google_maps_url')
-                            ->label('Google Maps URL')
-                            ->url(),
+                        Section::make('Contacto')
+                            ->schema([
+                                TextInput::make('phone')
+                                    ->label('Teléfono')
+                                    ->tel()
+                                    ->prefixIcon('heroicon-m-phone'),
 
-                        TextInput::make('lat')
-                            ->label('Latitud')
-                            ->numeric(),
+                                TextInput::make('email')
+                                    ->label('Email')
+                                    ->email()
+                                    ->prefixIcon('heroicon-m-envelope'),
 
-                        TextInput::make('lng')
-                            ->label('Longitud')
-                            ->numeric(),
-
-                        FileUpload::make('reference_image')
-                            ->columnSpanFull()
-                            ->label('Imagen de referencia')
-                            ->image()
-                            ->openable()
-                            ->disk( fn () => config('filesystems.default') )
-                            //->visibility("private")
-                            ->directory('restaurants/references'),
-                    ]),
-
-                Section::make('Configuración')
-                    ->columns(2)
-                    ->schema([
-                        Select::make('status')
-                            ->label('Estado')
-                            ->options([
-                                'active' => 'Activo',
-                                'inactive' => 'Inactivo',
-                            ])
-                            ->required(),
-
-                        Toggle::make('is_open')
-                            ->label('Abierto'),
-
-                        Toggle::make('accepts_delivery')
-                            ->label('Acepta delivery'),
-
-                        Toggle::make('accepts_pickup')
-                            ->label('Acepta pickup'),
-                    ]),
+                                TextInput::make('web_site')
+                                    ->label('Sitio Web')
+                                    ->url()
+                                    ->prefix('https://'),
+                            ]),
+                    ])
+                    ->columnSpan(1)
+                    ->extraAttributes(['class' => 'sticky top-24']),
             ]);
     }
 }
