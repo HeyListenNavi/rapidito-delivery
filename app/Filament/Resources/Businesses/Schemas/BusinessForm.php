@@ -119,6 +119,8 @@ class BusinessForm
                                     ->label('Foto de fachada')
                                     ->image()
                                     ->directory('restaurants/references')
+                                    ->openable()
+                                    ->disk(fn() => config('filesystems.default'))
                                     ->columnSpanFull(),
                             ]),
                     ])
@@ -145,16 +147,22 @@ class BusinessForm
                             ->schema([
                                 ToggleButtons::make('status')
                                     ->label('Visibilidad')
+                                    ->required()
                                     ->options(['active' => 'Público', 'inactive' => 'Oculto'])
                                     ->colors(['active' => 'success', 'inactive' => 'warning'])
                                     ->icons(['active' => 'heroicon-m-eye', 'inactive' => 'heroicon-m-eye-slash'])
+                                    ->default('active')
                                     ->inline(),
 
                                 ToggleButtons::make('is_open')
                                     ->label('¿Abierto ahora?')
-                                    ->options([1 => 'Abierto', 0 => 'Cerrado'])
-                                    ->colors([1 => 'success', 0 => 'gray'])
-                                    ->icons([1 => 'heroicon-m-building-storefront', 0 => 'heroicon-m-moon'])
+                                    ->required()
+                                    ->options(['true' => 'Abierto', 'false' => 'Cerrado'])
+                                    ->colors(['true' => 'success', 'false' => 'gray'])
+                                    ->icons(['true' => 'heroicon-m-building-storefront', 'false' => 'heroicon-m-moon'])
+                                    ->formatStateUsing(fn($state) => $state ? 'true' : 'false')
+                                    ->dehydrateStateUsing(fn($state) => $state === 'true')
+                                    ->default('true')
                                     ->inline(),
                             ]),
 
@@ -169,17 +177,19 @@ class BusinessForm
                                 TextInput::make('phone')
                                     ->label('Teléfono')
                                     ->tel()
+                                    ->required()
                                     ->prefixIcon('heroicon-m-phone'),
 
                                 TextInput::make('email')
                                     ->label('Email')
                                     ->email()
+                                    ->required()
                                     ->prefixIcon('heroicon-m-envelope'),
 
                                 TextInput::make('web_site')
                                     ->label('Sitio Web')
                                     ->url()
-                                    ->prefix('https://'),
+                                    ->required(),
                             ]),
                     ])
                     ->columnSpan(1)
