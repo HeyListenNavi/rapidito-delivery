@@ -1,118 +1,101 @@
 <?php
 
 use Livewire\Attributes\Title;
+use Livewire\Attributes\Computed;
 use Livewire\Component;
+use App\Models\Business;
+use App\Models\Tag;
+use App\Models\DeliveryAddress;
+use App\Models\ServiceZone;
+use Illuminate\Support\Facades\Storage;
 
 new #[Title('Search Product')] class extends Component {
-    //
+    public string $search = '';
+    public $city = null;
+
+    public function mount()
+    {
+        $guestToken = request()->cookie('guest_token');
+
+        if ($guestToken) {
+            $address = DeliveryAddress::where('guest_token', $guestToken)->latest()->first();
+
+            if ($address && $address->lat && $address->lng) {
+                $this->resolveServiceZone($address->lat, $address->lng);
+            }
+        }
+    }
+
+    protected function resolveServiceZone($lat, $lng)
+    {
+        $zone = ServiceZone::active()
+            ->with('city.businesses')
+            ->get()
+            ->first(fn ($zone) => $zone->contains($lat, $lng));
+
+        if ($zone) {
+            $this->city = $zone->city;
+        }
+    }
+
+    #[Computed]
+    public function businesses()
+    {
+        if (strlen($this->search) < 2) {
+            return collect();
+        }
+
+        return Business::active()
+            ->where('name', 'like', '%' . $this->search . '%')
+            ->when($this->city, function ($query) {
+                $query->where('city_id', $this->city->id);
+            })
+            ->get();
+    }
+
+    #[Computed]
+    public function topTags()
+    {
+        return Tag::whereIn('name', ['Hamburguesas', 'Vegano', 'Café', 'Postres'])->get();
+    }
 };
 ?>
 
-<div class="flex flex-col gap-4 p-4">
-    {{-- Very little is needed to make a happy life. - Marcus Aurelius --}}
-    <div class="flex items-center gap-4 rounded-2xl border border-gray-100 bg-white p-4">
+<div class="flex flex-col gap-6 p-4">
+    <div class="flex items-center gap-4 rounded-2xl border border-gray-100 bg-white pl-4 shadow-sm">
         <i class="bxf bx-search text-lg text-red-400"></i>
-        <input type="text" class="w-full text-sm font-medium text-gray-400" placeholder="¿Qué se te antoja hoy?">
+        <input wire:model.live.debounce.300ms="search" type="text"
+            class="w-full border-none py-4 pr-4 text-sm font-medium text-gray-800 focus:ring-0"
+            placeholder="¿Qué se te antoja hoy?">
     </div>
 
-    <div class="flex w-full flex-col gap-2">
-        <h2 class="font-bold">Recientes</h2>
+    <div wire:loading wire:target="search" class="w-full py-4 relative">
+        <i class="bxf bx-loader-lines-alt animate-spin absolute left-1/2 -translate-1/2 text-4xl text-red-500"></i>
+    </div>
 
-        <div class="flex flex-wrap gap-4">
-            <div
-                class="flex select-none items-center gap-1 rounded-xl border border-transparent bg-gray-50 px-3 py-2 text-sm font-medium text-gray-400 transition-all active:scale-90 active:border-red-500 active:bg-red-50 active:text-red-500">
-                <i class="bxf bx-clock"></i>
-                <span>KFC</span>
-            </div>
-            <div
-                class="flex select-none items-center gap-1 rounded-xl border border-transparent bg-gray-50 px-3 py-2 text-sm font-medium text-gray-400 transition-all active:scale-90 active:border-red-500 active:bg-red-50 active:text-red-500">
-                <i class="bxf bx-clock"></i>
-                <span>Pizza</span>
-            </div>
-            <div
-                class="flex select-none items-center gap-1 rounded-xl border border-transparent bg-gray-50 px-3 py-2 text-sm font-medium text-gray-400 transition-all active:scale-90 active:border-red-500 active:bg-red-50 active:text-red-500">
-                <i class="bxf bx-clock"></i>
-                <span>Hamburguesas</span>
-            </div>
-            <div
-                class="flex select-none items-center gap-1 rounded-xl border border-transparent bg-gray-50 px-3 py-2 text-sm font-medium text-gray-400 transition-all active:scale-90 active:border-red-500 active:bg-red-50 active:text-red-500">
-                <i class="bxf bx-clock"></i>
-                <span>Farmacia</span>
+    @if(strlen($search) >= 2)
+        <div wire:loading.remove wire:target="search" class="flex w-full flex-col gap-4">
+            <h2 class="font-bold text-gray-800">Resultados para "{{ $search }}"</h2>
+            <div class="flex flex-col gap-4">
+                @forelse($this->businesses as $restaurant)
+                    <livewire:restaurant.card
+                        :key="'search-res-'.$restaurant->id"
+                        :business="$restaurant"
+                        :name="$restaurant->name"
+                        :type="$restaurant->category?->name ?? 'General'"
+                        :stars="4.0"
+                        time="30-40min"
+                        :image="$restaurant->banner_path
+                                ? Storage::temporaryUrl($restaurant->banner_path, now()->addMinutes(10))
+                                : 'https://picsum.photos/300/200'"
+                    />
+                @empty
+                    <div class="flex flex-col items-center py-10 text-center">
+                        <i class="bxf bx-search-alt text-4xl text-gray-200"></i>
+                        <p class="mt-2 text-sm text-gray-400">No encontramos resultados para tu búsqueda.</p>
+                    </div>
+                @endforelse
             </div>
         </div>
-    </div>
-
-    <div class="flex w-full flex-col gap-2">
-        <h2 class="font-bold">Top Categorías</h2>
-
-        <div class="grid grid-cols-2 grid-rows-2 gap-4">
-            <div
-                class="rounded-4xl relative flex h-28 flex-col justify-center overflow-hidden border border-orange-200 bg-orange-100 p-5 transition-transform active:scale-90">
-                <span class="relative z-10 text-lg font-bold leading-tight text-orange-900">Comida<br>Rápida</span>
-                <i class="bxf bx-burger absolute -bottom-3 -right-3 text-7xl text-orange-300"></i>
-            </div>
-            <div
-                class="rounded-4xl relative flex h-28 flex-col justify-center overflow-hidden border border-green-200 bg-green-100 p-5 transition-transform active:scale-90">
-                <span class="relative z-10 text-lg font-bold leading-tight text-green-900">Saludable<br>& Fit</span>
-                <i class="bxf bx-carrot absolute -bottom-3 -right-3 text-7xl text-green-300"></i>
-            </div>
-            <div
-                class="rounded-4xl relative flex h-28 flex-col justify-center overflow-hidden border border-blue-200 bg-blue-100 p-5 transition-transform active:scale-90">
-                <span class="relative z-10 text-lg font-bold leading-tight text-blue-900">Bebidas<br>& Licores</span>
-                <i class="bxf bx-wine absolute -bottom-3 -right-3 text-7xl text-blue-300"></i>
-            </div>
-            <div
-                class="rounded-4xl relative flex h-28 flex-col justify-center overflow-hidden border border-pink-200 bg-pink-100 p-5 transition-transform active:scale-90">
-                <span class="relative z-10 text-lg font-bold leading-tight text-pink-900">Postres<br>& Dulces</span>
-                <i class="bxf bx-icecream absolute -bottom-3 -right-3 text-7xl text-pink-300"></i>
-            </div>
-        </div>
-    </div>
-
-    <div class="flex w-full flex-col gap-2">
-        <h2 class="font-bold">Tendencias hoy 🔥</h2>
-
-        <div class="divide-y divide-gray-200">
-            <div class="flex items-center gap-8 py-3">
-                <span class="text-2xl font-bold text-gray-400">1</span>
-                <div class="flex-1">
-                    <p class="font-bold">Little Caesars 👑</p>
-                    <p class="text-xs text-gray-500">Pizza • 25-35 min</p>
-                </div>
-                <span
-                    class="self-start rounded-xl border border-red-200 bg-red-100 px-2 py-1 text-xs font-bold text-red-500">
-                    Promo
-                </span>
-            </div>
-
-            <div class="flex items-center gap-8 py-3">
-                <span class="text-2xl font-bold text-gray-400">2</span>
-                <div class="flex-1">
-                    <p class="font-bold">Burger Lab 🥈</p>
-                    <p class="text-xs text-gray-500">Hamburguesas • 20-30 min</p>
-                </div>
-            </div>
-
-            <div class="flex items-center gap-8 py-3">
-                <span class="text-2xl font-bold text-gray-400">3</span>
-                <div class="flex-1">
-                    <p class="font-bold">Sushi Itto 🥉</p>
-                    <p class="text-xs text-gray-500">Sushi • 40-50 min</p>
-                </div>
-            </div>
-
-            <div class="flex items-center gap-8 py-3">
-                <span class="text-2xl font-bold text-gray-400">4</span>
-                <div class="flex-1">
-                    <p class="font-bold">Green Bowl</p>
-                    <p class="text-xs text-gray-500">Saludable • 15-25 min</p>
-                </div>
-                <span
-                    class="self-start rounded-xl border border-red-200 bg-red-100 px-2 py-1 text-xs font-bold text-red-500">
-                    Promo
-                </span>
-            </div>
-
-        </div>
-    </div>
+    @endif
 </div>
