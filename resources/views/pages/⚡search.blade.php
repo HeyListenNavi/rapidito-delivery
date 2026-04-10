@@ -69,6 +69,44 @@ new #[Title('Search Product')] class extends Component {
             placeholder="¿Qué se te antoja hoy?">
     </div>
 
+    <div class="flex w-full flex-col gap-3">
+        <h2 class="font-bold text-gray-800">Top Categorías</h2>
+
+        <div class="grid grid-cols-2 gap-4">
+            @if($tag = $this->topTags->firstWhere('name', 'Hamburguesas'))
+            <a wire:navigate href="/tag/{{ $tag->id }}"
+                class="rounded-4xl relative flex h-28 flex-col justify-center overflow-hidden border border-orange-200 bg-orange-100 p-5 transition-transform active:scale-90">
+                <span class="relative z-10 text-lg font-bold leading-tight text-orange-900">Comida<br>Rápida</span>
+                <i class="bxf bx-burger absolute -bottom-3 -right-3 text-7xl text-orange-300"></i>
+            </a>
+            @endif
+
+            @if($tag = $this->topTags->firstWhere('name', 'Vegano'))
+            <a wire:navigate href="/tag/{{ $tag->id }}"
+                class="rounded-4xl relative flex h-28 flex-col justify-center overflow-hidden border border-emerald-200 bg-emerald-50 p-5 transition-transform active:scale-90">
+                <span class="relative z-10 text-lg font-bold leading-tight text-emerald-900">Saludable<br>& Fit</span>
+                <i class="bxf bx-carrot absolute -bottom-3 -right-3 text-7xl text-emerald-300"></i>
+            </a>
+            @endif
+
+            @if($tag = $this->topTags->firstWhere('name', 'Café'))
+            <a wire:navigate href="/tag/{{ $tag->id }}"
+                class="rounded-4xl relative flex h-28 flex-col justify-center overflow-hidden border border-stone-200 bg-stone-100 p-5 transition-transform active:scale-90">
+                <span class="relative z-10 text-lg font-bold leading-tight text-stone-900">Bebidas<br>& Café</span>
+                <i class="bxf bx-cup-hot absolute -bottom-3 -right-3 text-7xl text-stone-300"></i>
+            </a>
+            @endif
+
+            @if($tag = $this->topTags->firstWhere('name', 'Postres'))
+            <a wire:navigate href="/tag/{{ $tag->id }}"
+                class="rounded-4xl relative flex h-28 flex-col justify-center overflow-hidden border border-rose-200 bg-rose-100 p-5 transition-transform active:scale-90">
+                <span class="relative z-10 text-lg font-bold leading-tight text-rose-900">Postres<br>& Dulces</span>
+                <i class="bxf bx-icecream absolute -bottom-3 -right-3 text-7xl text-rose-300"></i>
+            </a>
+            @endif
+        </div>
+    </div>
+
     <div wire:loading wire:target="search" class="w-full py-4 relative">
         <i class="bxf bx-loader-lines-alt animate-spin absolute left-1/2 -translate-1/2 text-4xl text-red-500"></i>
     </div>
