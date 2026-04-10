@@ -5,15 +5,13 @@ use Livewire\Attributes\Title;
 use Livewire\Attributes\Computed;
 use App\Models\ServiceZone;
 use App\Models\DeliveryAddress;
-use App\Models\Category;
+use App\Models\Tag;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Storage;
 use App\Enums\AddressSource;
 
 new #[Title('Home')] class extends Component {
-    public ?int $selectedCategoryId = null;
-
     public ?float $lat = null;
     public ?float $lng = null;
 
@@ -25,7 +23,6 @@ new #[Title('Home')] class extends Component {
     protected $listeners = [
         'locationDetected' => 'setLocation',
         'locationDenied' => 'handleDenied',
-        'category-selected' => 'filterByCategory',
     ];
 
     public function mount()
@@ -137,9 +134,13 @@ new #[Title('Home')] class extends Component {
         return null;
     }
 
-    public function filterByCategory(?int $categoryId)
+    #[Computed]
+    public function tags()
     {
-        $this->selectedCategoryId = ($this->selectedCategoryId === $categoryId) ? null : $categoryId;
+        return Tag::whereIn('name', [
+            'Tacos', 'Hamburguesas', 'Pizza', 'Sushi', 'Mariscos',
+            'Vegano', 'Postres', 'Café', 'Alitas', 'Desayunos'
+        ])->get();
     }
 
     #[Computed]
@@ -148,16 +149,13 @@ new #[Title('Home')] class extends Component {
         if (!$this->city) return collect();
 
         return $this->city->businesses()
-            ->when($this->selectedCategoryId, function ($query) {
-                $query->where('category_id', $this->selectedCategoryId);
-            })
             ->active()
             ->get();
     }
 };
 ?>
 
-<div class="flex flex-col gap-4 pt-4">
+<div class="flex flex-col gap-8 pt-4">
 
     {{-- Estado de ubicación denegada --}}
     @if($locationDenied)
@@ -184,33 +182,43 @@ new #[Title('Home')] class extends Component {
             </p>
         </div>
     </div>
-    
+
     {{-- Hay ciudad y cobertura --}}
     @elseif($city)
     <div class="flex w-full flex-col gap-2">
         <div class="flex items-center justify-between px-4">
-            <h2 class="font-bold text-gray-800">Categorías</h2>
-            @if($selectedCategoryId)
-            <button wire:click="filterByCategory(null)" class="text-xs font-bold text-red-500">Limpiar</button>
-            @endif
+            <h2 class="font-bold text-gray-800">Explorar por categorías</h2>
         </div>
 
-        <div class="no-scrollbar flex gap-4 overflow-x-auto px-4 pb-2">
-            @foreach(App\Models\Category::active()->get() as $cat)
-            <livewire:category.icon
-                :key="'cat-'.$cat->id"
-                :id="$cat->id"
-                :category="$cat->name"
-                icon="🍴"
-                :active="$selectedCategoryId === $cat->id"
-            />
+        <div class="no-scrollbar flex gap-8 overflow-x-auto px-4">
+            @foreach($this->tags as $tag)
+            <a wire:navigate href="/tag/{{ $tag->id }}" class="flex flex-col items-center gap-1 shrink-0">
+                <div class="flex h-16 w-16 items-center justify-center rounded-2xl bg-gray-200 text-2xl">
+                    @php
+                        $icons = [
+                            'Tacos' => '🌮',
+                            'Hamburguesas' => '🍔',
+                            'Pizza' => '🍕',
+                            'Sushi' => '🍣',
+                            'Mariscos' => '🍤',
+                            'Vegano' => '🥗',
+                            'Postres' => '🍰',
+                            'Café' => '☕',
+                            'Alitas' => '🍗',
+                            'Desayunos' => '🍳',
+                        ];
+                    @endphp
+                    {{ $icons[$tag->name] ?? '🍴' }}
+                </div>
+                <span class="text-xs font-medium text-gray-600">{{ $tag->name }}</span>
+            </a>
             @endforeach
         </div>
     </div>
 
     <div class="flex w-full flex-col gap-2 px-4">
         <h2 class="font-bold text-gray-800">
-            {{ $selectedCategoryId ? 'Resultados' : 'Restaurantes cerca' }}
+            Restaurantes cerca
         </h2>
 
         <div class="flex flex-col gap-4">
@@ -230,7 +238,7 @@ new #[Title('Home')] class extends Component {
                 <div class="flex flex-col items-center py-10 text-center">
                     <i class="bxf bx-search-alt text-4xl text-gray-200"></i>
                     <p class="mt-2 text-sm text-gray-400 text-balance">
-                        No encontramos restaurantes de esta categoría en tu zona.
+                        No encontramos restaurantes en tu zona actualmente.
                     </p>
                 </div>
             @endforelse
