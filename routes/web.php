@@ -19,6 +19,7 @@ Route::livewire('/search', 'pages::search')->name('search');
 Route::livewire('/cart', 'pages::cart')->name('cart');
 Route::livewire('/profile', 'pages::profile')->name('profile');
 Route::livewire('/business/{business}', 'pages::business')->name('business');
+Route::livewire('/tag/{tag}', 'pages::tag')->name('tag');
 Route::livewire('/checkout', 'checkout')->name('checkout');
 Route::livewire('/location', 'pages::location')->name('location');
 Route::livewire('/checkout/address', 'pages::location')->name('checkout.address');
