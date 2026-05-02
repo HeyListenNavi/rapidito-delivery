@@ -2,9 +2,9 @@
 
 namespace App\Filament\Resources\Orders\Schemas;
 
+use App\Enums\OrderStatus;
 use Filament\Forms;
 use Filament\Schemas\Schema;
-use App\Enums\OrderStatus;
 
 class OrderForm
 {
@@ -18,9 +18,9 @@ class OrderForm
                     ->searchable()
                     ->required(),
 
-                Forms\Components\Select::make('restaurant_id')
+                Forms\Components\Select::make('business_id')
                     ->label('Restaurante')
-                    ->relationship('restaurant', 'name')
+                    ->relationship('business', 'name')
                     ->searchable()
                     ->required(),
 
@@ -31,15 +31,15 @@ class OrderForm
                     ->nullable(),
 
                 Forms\Components\Select::make('status')
-                ->label('Estado')
-                ->options(
-                    collect(OrderStatus::cases())
-                        ->mapWithKeys(fn ($case) => [
-                            $case->value => str($case->value)->headline(),
-                        ])
-                        ->toArray()
-                )
-                ->required(),
+                    ->label('Estado')
+                    ->options(
+                        collect(OrderStatus::cases())
+                            ->mapWithKeys(fn ($case) => [
+                                $case->value => str($case->value)->headline(),
+                            ])
+                            ->toArray()
+                    )
+                    ->required(),
 
                 Forms\Components\Select::make('payment_status')
                     ->label('Estado de Pago')
