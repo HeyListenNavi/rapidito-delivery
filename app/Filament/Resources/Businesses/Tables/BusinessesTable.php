@@ -5,10 +5,10 @@ namespace App\Filament\Resources\Businesses\Tables;
 use Filament\Actions\BulkActionGroup;
 use Filament\Actions\DeleteBulkAction;
 use Filament\Actions\EditAction;
-use Filament\Support\Enums\Width;
-use Filament\Tables;
-use Filament\Tables\Columns\IconColumn;
+use Filament\Support\Enums\TextSize;
 use Filament\Tables\Columns\ImageColumn;
+use Filament\Tables\Columns\Layout\Split;
+use Filament\Tables\Columns\Layout\Stack;
 use Filament\Tables\Columns\TextColumn;
 use Filament\Tables\Filters\SelectFilter;
 use Filament\Tables\Filters\TernaryFilter;
@@ -20,68 +20,73 @@ class BusinessesTable
     {
         return $table
             ->columns([
-                ImageColumn::make('logo_path')
-                    ->label('')
-                    ->circular()
-                    ->imageSize(40)
-                    ->width(40),
+                Stack::make([
+                    Split::make([
+                        ImageColumn::make('logo_path')
+                            ->label('')
+                            ->circular()
+                            ->imageSize(60)
+                            ->grow(false),
 
-                TextColumn::make('name')
-                    ->label('Restaurante')
-                    ->searchable()
-                    ->sortable()
-                    ->weight('bold')
-                    ->description(fn($record) => $record->phone),
+                        Stack::make([
+                            TextColumn::make('name')
+                                ->label('Negocio')
+                                ->searchable()
+                                ->sortable()
+                                ->weight('bold')
+                                ->size(TextSize::Large),
 
-                TextColumn::make('category.name')
-                    ->label('Categoría')
-                    ->badge()
-                    ->sortable(),
+                            TextColumn::make('category.name')
+                                ->label('Categoría')
+                                ->badge()
+                                ->color('gray'),
+                        ]),
+                    ]),
 
-                TextColumn::make('city.name')
-                    ->label('Ciudad')
-                    ->searchable()
-                    ->sortable(),
+                    Stack::make([
+                        TextColumn::make('phone')
+                            ->icon('heroicon-m-phone')
+                            ->color('gray')
+                            ->size(TextSize::ExtraSmall),
 
-                TextColumn::make('status')
-                    ->label('Estado')
-                    ->badge()
-                    ->formatStateUsing(fn(string $state): string => match ($state) {
-                        'active' => 'Público',
-                        'inactive' => 'Oculto',
-                        default => $state,
-                    })
-                    ->color(fn(string $state): string => match ($state) {
-                        'active' => 'success',
-                        'inactive' => 'danger',
-                        default => 'gray',
-                    })
-                    ->icon(fn(string $state): string => match ($state) {
-                        'active' => 'heroicon-c-eye',
-                        'inactive' => 'heroicon-c-eye-slash',
-                        default => null,
-                    }),
+                        TextColumn::make('email')
+                            ->icon('heroicon-m-envelope')
+                            ->color('gray')
+                            ->size(TextSize::ExtraSmall),
+                    ]),
 
-                TextColumn::make('is_open')
-                    ->label('Horario')
-                    ->badge()
-                    ->formatStateUsing(fn($state) => $state ? 'Abierto' : 'Cerrado')
-                    ->color(fn($state) => $state ? 'success' : 'gray')
-                    ->icon(fn($state) => $state ? 'heroicon-c-building-storefront' : 'heroicon-c-moon')
-                    ->toggleable(isToggledHiddenByDefault: true),
+                    Split::make([
+                        TextColumn::make('status')
+                            ->badge()
+                            ->formatStateUsing(fn (string $state): string => match ($state) {
+                                'active' => 'Público',
+                                'inactive' => 'Oculto',
+                                default => $state,
+                            })
+                            ->color(fn (string $state): string => match ($state) {
+                                'active' => 'info',
+                                'inactive' => 'danger',
+                                default => 'gray',
+                            })
+                            ->icon(fn (string $state): string => match ($state) {
+                                'active' => 'heroicon-m-eye',
+                                'inactive' => 'heroicon-m-eye-slash',
+                                default => 'heroicon-m-question-mark-circle',
+                            })
+                            ->grow(false),
 
-                IconColumn::make('accepts_delivery')
-                    ->label('Delivery')
-                    ->boolean()
-                    ->trueIcon('heroicon-c-shopping-bag')
-                    ->falseIcon('heroicon-c-minus')
-                    ->trueColor('primary')
-                    ->falseColor('gray')
-                    ->toggleable(isToggledHiddenByDefault: true),
+                        TextColumn::make('is_open')
+                            ->badge()
+                            ->formatStateUsing(fn ($state) => $state ? 'Abierto' : 'Cerrado')
+                            ->color(fn ($state) => $state ? 'success' : 'gray')
+                            ->icon(fn ($state) => $state ? 'heroicon-m-building-storefront' : 'heroicon-m-moon')
+                            ->grow(false),
+                    ]),
+                ])->space(3),
             ])
             ->filters([
                 SelectFilter::make('category_id')
-                    ->label('Categoría')
+                    ->label('Filtrar por Categoría')
                     ->relationship('category', 'name')
                     ->searchable()
                     ->preload(),
@@ -93,17 +98,20 @@ class BusinessesTable
                     ->preload(),
 
                 TernaryFilter::make('is_open')
-                    ->label('Estado de operación')
+                    ->label('Estatus de Operación')
                     ->placeholder('Todos')
-                    ->trueLabel('Abiertos')
-                    ->falseLabel('Cerrados'),
+                    ->trueLabel('Solo Abiertos')
+                    ->falseLabel('Solo Cerrados'),
 
-                SelectFilter::make('status')
-                    ->label('Estado del registro')
-                    ->options([
-                        'active' => 'Activo',
-                        'inactive' => 'Inactivo',
-                    ]),
+                TernaryFilter::make('status')
+                    ->label('Visibilidad')
+                    ->placeholder('Todos')
+                    ->trueLabel('Solo Públicos')
+                    ->falseLabel('Solo Ocultos')
+                    ->queries(
+                        true: fn ($query) => $query->where('status', 'active'),
+                        false: fn ($query) => $query->where('status', 'inactive'),
+                    ),
             ])
             ->recordActions([
                 EditAction::make(),
@@ -113,6 +121,10 @@ class BusinessesTable
                     DeleteBulkAction::make(),
                 ]),
             ])
-            ->defaultSort('created_at', 'desc');
+            ->defaultSort('created_at', 'desc')
+            ->contentGrid([
+                'md' => 2,
+                'xl' => 3,
+            ]);
     }
 }
