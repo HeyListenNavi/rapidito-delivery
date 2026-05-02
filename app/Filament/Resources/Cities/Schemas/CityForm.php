@@ -2,7 +2,9 @@
 
 namespace App\Filament\Resources\Cities\Schemas;
 
-use Filament\Forms;
+use Filament\Forms\Components\TextInput;
+use Filament\Forms\Components\ToggleButtons;
+use Filament\Schemas\Components\Section;
 use Filament\Schemas\Schema;
 
 class CityForm
@@ -11,24 +13,41 @@ class CityForm
     {
         return $schema
             ->components([
-                Forms\Components\TextInput::make('name')
-                    ->label('Nombre')
-                    ->required()
-                    ->maxLength(255),
+                        TextInput::make('name')
+                            ->label('Nombre de la Ciudad')
+                            ->placeholder('Ej: Santo Domingo, Madrid...')
+                            ->required()
+                            ->maxLength(255),
 
-                Forms\Components\TextInput::make('state')
-                    ->label('Estado')
-                    ->maxLength(255),
+                        TextInput::make('state')
+                            ->label('Estado / Provincia')
+                            ->placeholder('Ej: Distrito Nacional, Comunidad de Madrid...')
+                            ->maxLength(255),
 
-                Forms\Components\TextInput::make('country')
-                    ->label('País')
-                    ->default('Mexico')
-                    ->required()
-                    ->maxLength(255),
+                        TextInput::make('country')
+                            ->label('País')
+                            ->placeholder('Ej: República Dominicana, España...')
+                            ->default('República Dominicana')
+                            ->required()
+                            ->maxLength(255),
 
-                Forms\Components\Toggle::make('active')
-                    ->label('Activa')
-                    ->default(true),
+                        ToggleButtons::make('active')
+                            ->label('Estatus Operativo')
+                            ->boolean()
+                            ->options([
+                                true => 'Activa',
+                                false => 'Inactiva',
+                            ])
+                            ->colors([
+                                true => 'success',
+                                false => 'danger',
+                            ])
+                            ->icons([
+                                true => 'heroicon-m-check-circle',
+                                false => 'heroicon-m-x-circle',
+                            ])
+                            ->inline()
+                            ->default(true),
             ]);
     }
 }
