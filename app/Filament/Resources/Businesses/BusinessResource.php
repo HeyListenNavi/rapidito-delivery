@@ -20,7 +20,20 @@ class BusinessResource extends Resource
 {
     protected static ?string $model = Business::class;
 
-    protected static string|BackedEnum|null $navigationIcon = Heroicon::OutlinedRectangleStack;
+    protected static string|BackedEnum|null $navigationIcon = Heroicon::BuildingStorefront;
+
+    protected static \UnitEnum|string|null $navigationGroup = 'Catálogo';
+
+    protected static ?string $modelLabel = 'Negocio';
+
+    protected static ?string $pluralModelLabel = 'Negocios';
+
+    protected static ?string $recordTitleAttribute = 'name';
+
+    public static function getGloballySearchableAttributes(): array
+    {
+        return ['name'];
+    }
 
     public static function form(Schema $schema): Schema
     {

@@ -18,9 +18,20 @@ class ProductCategoryResource extends Resource
 {
     protected static ?string $model = ProductCategory::class;
 
-    protected static string|BackedEnum|null $navigationIcon = Heroicon::OutlinedRectangleStack;
+    protected static string|BackedEnum|null $navigationIcon = Heroicon::ListBullet;
 
-    protected static ?string $recordTitleAttribute = 'Categorias de producto';
+    protected static \UnitEnum|string|null $navigationGroup = 'Catálogo';
+
+    protected static ?string $modelLabel = 'Categoría de Producto';
+
+    protected static ?string $pluralModelLabel = 'Categorías de Producto';
+
+    protected static ?string $recordTitleAttribute = 'name';
+
+    public static function getGloballySearchableAttributes(): array
+    {
+        return ['name'];
+    }
 
     public static function form(Schema $schema): Schema
     {

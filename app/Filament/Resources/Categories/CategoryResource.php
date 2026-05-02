@@ -2,8 +2,6 @@
 
 namespace App\Filament\Resources\Categories;
 
-use App\Filament\Resources\Categories\Pages\CreateCategory;
-use App\Filament\Resources\Categories\Pages\EditCategory;
 use App\Filament\Resources\Categories\Pages\ListCategories;
 use App\Filament\Resources\Categories\Schemas\CategoryForm;
 use App\Filament\Resources\Categories\Tables\CategoriesTable;
@@ -18,9 +16,20 @@ class CategoryResource extends Resource
 {
     protected static ?string $model = Category::class;
 
-    protected static string|BackedEnum|null $navigationIcon = Heroicon::OutlinedRectangleStack;
+    protected static string|BackedEnum|null $navigationIcon = Heroicon::RectangleGroup;
 
-    protected static ?string $recordTitleAttribute = 'Categorias';
+    protected static \UnitEnum|string|null $navigationGroup = 'Catálogo';
+
+    protected static ?string $modelLabel = 'Categoría de Negocio';
+
+    protected static ?string $pluralModelLabel = 'Categorías de Negocio';
+
+    protected static ?string $recordTitleAttribute = 'name';
+
+    public static function getGloballySearchableAttributes(): array
+    {
+        return ['name'];
+    }
 
     public static function form(Schema $schema): Schema
     {
