@@ -18,9 +18,20 @@ class CityResource extends Resource
 {
     protected static ?string $model = City::class;
 
-    protected static string|BackedEnum|null $navigationIcon = Heroicon::OutlinedRectangleStack;
+    protected static string|BackedEnum|null $navigationIcon = Heroicon::MapPin;
 
-    protected static ?string $recordTitleAttribute = 'Ciudades';
+    protected static \UnitEnum|string|null $navigationGroup = 'Logística';
+
+    protected static ?string $modelLabel = 'Ciudad';
+
+    protected static ?string $pluralModelLabel = 'Ciudades';
+
+    protected static ?string $recordTitleAttribute = 'name';
+
+    public static function getGloballySearchableAttributes(): array
+    {
+        return ['name'];
+    }
 
     public static function form(Schema $schema): Schema
     {

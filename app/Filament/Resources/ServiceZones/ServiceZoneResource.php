@@ -19,9 +19,20 @@ class ServiceZoneResource extends Resource
 {
     protected static ?string $model = ServiceZone::class;
 
-    protected static string|BackedEnum|null $navigationIcon = Heroicon::OutlinedRectangleStack;
+    protected static string|BackedEnum|null $navigationIcon = Heroicon::GlobeAmericas;
 
-    protected static ?string $recordTitleAttribute = 'Zonas de Servicio';
+    protected static \UnitEnum|string|null $navigationGroup = 'Logística';
+
+    protected static ?string $modelLabel = 'Zona de Servicio';
+
+    protected static ?string $pluralModelLabel = 'Zonas de Servicio';
+
+    protected static ?string $recordTitleAttribute = 'name';
+
+    public static function getGloballySearchableAttributes(): array
+    {
+        return ['name'];
+    }
 
     public static function form(Schema $schema): Schema
     {
