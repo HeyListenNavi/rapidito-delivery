@@ -7,19 +7,22 @@ use Filament\Actions\CreateAction;
 use Filament\Actions\DeleteAction;
 use Filament\Actions\DeleteBulkAction;
 use Filament\Actions\EditAction;
-use Filament\Forms\Components\Hidden;
 use Filament\Forms\Components\TextInput;
+use Filament\Notifications\Notification;
 use Filament\Resources\RelationManagers\RelationManager;
 use Filament\Schemas\Schema;
 use Filament\Tables\Columns\TextColumn;
 use Filament\Tables\Table;
-use Filament\Notifications\Notification;
 
 class ProductCategoriesRelationManager extends RelationManager
 {
     protected static string $relationship = 'productCategories';
 
     protected static ?string $title = 'Categorías del Menú';
+
+    protected static ?string $modelLabel = 'Categoría';
+
+    protected static ?string $pluralModelLabel = 'Categorías';
 
     public function form(Schema $schema): Schema
     {
@@ -31,8 +34,6 @@ class ProductCategoriesRelationManager extends RelationManager
                     ->placeholder('Ej. Entradas, Platos Fuertes, Bebidas...')
                     ->required()
                     ->maxLength(255),
-                Hidden::make('sort_order')
-                    ->default(0),
             ]);
     }
 
@@ -47,10 +48,10 @@ class ProductCategoriesRelationManager extends RelationManager
                     ->searchable(),
 
                 TextColumn::make('products_count')
+                    ->label('Cantidad de productos')
                     ->counts('products')
-                    ->label('Platillos asignados')
-                    ->badge()
-                    ->color(fn (int $state): string => $state > 0 ? 'primary' : 'gray'),
+                    ->formatStateUsing(fn($state) => "{$state} productos")
+                    ->color('gray'),
             ])
             ->headerActions([
                 CreateAction::make()
