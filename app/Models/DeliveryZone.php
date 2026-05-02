@@ -93,7 +93,7 @@ class DeliveryZone extends Model
         $polygon = new GeoPolygon();
 
         $coordinates = [];
-        
+
         // Misma lógica de extracción robusta para cuando necesites instanciar el polígono
         if (isset($this->polygon_json['features'][0]['geometry']['type']) && $this->polygon_json['features'][0]['geometry']['type'] === 'Polygon') {
             $coordinates = $this->polygon_json['features'][0]['geometry']['coordinates'][0] ?? [];

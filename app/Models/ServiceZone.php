@@ -2,8 +2,8 @@
 
 namespace App\Models;
 
-use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
+use Illuminate\Database\Eloquent\Model;
 use Location\Coordinate;
 use Location\Polygon as GeoPolygon;
 
@@ -26,31 +26,42 @@ class ServiceZone extends Model
     protected $casts = [
         'polygon' => 'array',
         'active' => 'boolean',
-        'debug'  => 'boolean',
+        'debug' => 'boolean',
     ];
 
     protected static function booted()
     {
         static::saving(function ($zone) {
-
             $coordinates = [];
 
-            if ( isset($zone->polygon['features'][0]['geometry']['type']) && $zone->polygon['features'][0]['geometry']['type'] === 'Polygon' ) {
-                $coordinates = $zone->polygon['features'][0]['geometry']['coordinates'][0] ?? [];
+            $features = $zone->polygon['features'] ?? [];
+            foreach ($features as $feature) {
+                if (($feature['geometry']['type'] ?? null) === 'Polygon') {
+                    $coordinates = $feature['geometry']['coordinates'][0] ?? [];
+                    break;
+                }
+            }
+
+            if (empty($coordinates)) {
+                return;
             }
 
             $lats = [];
             $lngs = [];
 
             foreach ($coordinates as $point) {
-                $lngs[] = $point[0];
-                $lats[] = $point[1];
+                if (isset($point[0], $point[1])) {
+                    $lngs[] = $point[0];
+                    $lats[] = $point[1];
+                }
             }
 
-            $zone->bbox_min_lat = min($lats);
-            $zone->bbox_max_lat = max($lats);
-            $zone->bbox_min_lng = min($lngs);
-            $zone->bbox_max_lng = max($lngs);
+            if (! empty($lats) && ! empty($lngs)) {
+                $zone->bbox_min_lat = min($lats);
+                $zone->bbox_max_lat = max($lats);
+                $zone->bbox_min_lng = min($lngs);
+                $zone->bbox_max_lng = max($lngs);
+            }
         });
     }
 
@@ -66,9 +77,16 @@ class ServiceZone extends Model
 
     public function toPhpGeoPolygon(): GeoPolygon
     {
-        $polygon = new GeoPolygon();
+        $polygon = new GeoPolygon;
+        $coordinates = [];
 
-        $coordinates = $this->polygon['features'][0]['geometry']['coordinates'][0] ?? [];
+        $features = $this->polygon['features'] ?? [];
+        foreach ($features as $feature) {
+            if (($feature['geometry']['type'] ?? null) === 'Polygon') {
+                $coordinates = $feature['geometry']['coordinates'][0] ?? [];
+                break;
+            }
+        }
 
         foreach ($coordinates as $point) {
             $polygon->addPoint(new Coordinate($point[1], $point[0]));
@@ -79,7 +97,7 @@ class ServiceZone extends Model
 
     public function contains(float $lat, float $lng): bool
     {
-        if (!$this->active) {
+        if (! $this->active) {
             return false;
         }
 
