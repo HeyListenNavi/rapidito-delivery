@@ -18,9 +18,20 @@ class OptionResource extends Resource
 {
     protected static ?string $model = Option::class;
 
-    protected static string|BackedEnum|null $navigationIcon = Heroicon::OutlinedRectangleStack;
+    protected static string|BackedEnum|null $navigationIcon = Heroicon::AdjustmentsHorizontal;
 
-    protected static ?string $recordTitleAttribute = 'Opciones';
+    protected static \UnitEnum|string|null $navigationGroup = 'Atributos';
+
+    protected static ?string $modelLabel = 'Opción';
+
+    protected static ?string $pluralModelLabel = 'Opciones';
+
+    protected static ?string $recordTitleAttribute = 'name';
+
+    public static function getGloballySearchableAttributes(): array
+    {
+        return ['name'];
+    }
 
     public static function form(Schema $schema): Schema
     {
