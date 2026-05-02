@@ -16,14 +16,22 @@ use Filament\Resources\RelationManagers\RelationManager;
 use Filament\Schemas\Components\Group;
 use Filament\Schemas\Components\Section;
 use Filament\Schemas\Schema;
+use Filament\Support\Enums\TextSize;
 use Filament\Tables\Columns\ImageColumn;
+use Filament\Tables\Columns\Layout\Split;
+use Filament\Tables\Columns\Layout\Stack;
 use Filament\Tables\Columns\TextColumn;
-use Filament\Tables\Columns\ToggleColumn;
 use Filament\Tables\Table;
 
 class ProductsRelationManager extends RelationManager
 {
     protected static string $relationship = 'products';
+
+    protected static ?string $title = 'Productos';
+
+    protected static ?string $modelLabel = 'Producto';
+
+    protected static ?string $pluralModelLabel = 'Productos';
 
     public function form(Schema $schema): Schema
     {
@@ -33,7 +41,7 @@ class ProductsRelationManager extends RelationManager
                 Group::make()
                     ->columnSpan(2)
                     ->schema([
-                        Section::make('Detalles del Platillo')
+                        Section::make('Detalles del Producto')
                             ->schema([
                                 TextInput::make('name')
                                     ->label('Nombre del producto')
@@ -141,43 +149,61 @@ class ProductsRelationManager extends RelationManager
             ->reorderable('sort_order')
             ->defaultSort('sort_order')
             ->columns([
-                ImageColumn::make('image_path')
-                    ->label('')
-                    ->square()
-                    ->imageHeight(80),
+                Split::make([
+                    ImageColumn::make('image_path')
+                        ->label('')
+                        ->imageSize(150)
+                        ->defaultImageUrl('https://placehold.co/150x150?text=Sin+imagen')
+                        ->grow(false)
+                        ->extraAttributes(['style' => 'border-radius: 16px; overflow: hidden;']),
 
-                TextColumn::make('name')
-                    ->label('Producto')
-                    ->searchable()
-                    ->weight('bold')
-                    ->description(fn($record) => str($record->description)->limit(40)),
+                    Stack::make([
+                        TextColumn::make('name')
+                            ->label('Producto')
+                            ->searchable()
+                            ->weight('bold')
+                            ->size(TextSize::Large),
 
-                TextColumn::make('category.name')
-                    ->label('Categoría')
-                    ->badge()
-                    ->color('gray')
-                    ->sortable(),
+                        TextColumn::make('category.name')
+                            ->label('Categoría')
+                            ->badge()
+                            ->color('gray'),
+                    ])->space(1),
 
-                TextColumn::make('price')
-                    ->label('Precio')
-                    ->money('MXN')
-                    ->sortable(),
+                    Stack::make([
+                        TextColumn::make('price')
+                            ->label('Precio')
+                            ->money('MXN')
+                            ->weight('bold')
+                            ->color('primary')
+                            ->size(TextSize::Large),
 
-                ToggleColumn::make('is_available')
-                    ->label('¿Hay stock?')
-                    ->onColor('success')
-                    ->offColor('gray')
-                    ->onIcon('heroicon-c-check')
-                    ->offIcon('heroicon-c-x-mark')
-                    ->toggleable(isToggledHiddenByDefault: true),
+                        Stack::make([
+                            TextColumn::make('is_available')
+                                ->badge()
+                                ->formatStateUsing(fn($state) => $state ? 'En Stock' : 'Agotado')
+                                ->color(fn($state) => $state ? 'success' : 'danger')
+                                ->icon(fn($state) => $state ? 'heroicon-m-check-circle' : 'heroicon-m-x-circle')
+                                ->grow(false),
 
-                ToggleColumn::make('is_active')
-                    ->label('Público')
-                    ->onColor('success')
-                    ->offColor('gray')
-                    ->onIcon('heroicon-c-eye')
-                    ->offIcon('heroicon-c-eye-slash')
-                    ->toggleable(isToggledHiddenByDefault: true),
+                            TextColumn::make('is_active')
+                                ->badge()
+                                ->formatStateUsing(fn($state) => $state ? 'Público' : 'Oculto')
+                                ->color(fn($state) => $state ? 'info' : 'warning')
+                                ->icon(fn($state) => $state ? 'heroicon-m-eye' : 'heroicon-m-eye-slash')
+                                ->grow(false),
+                        ])
+                            ->space(1)
+                            ->alignEnd(),
+                    ])
+                        ->space(2)
+                        ->grow(false)
+                        ->alignEnd(),
+                ]),
+            ])
+            ->contentGrid([
+                'md' => 1,
+                'xl' => 2,
             ])
             ->filters([])
             ->headerActions([
