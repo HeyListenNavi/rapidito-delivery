@@ -13,15 +13,25 @@ use Filament\Resources\Resource;
 use Filament\Schemas\Schema;
 use Filament\Support\Icons\Heroicon;
 use Filament\Tables\Table;
-use App\Filament\Resources\Orders\RelationManagers;
 
 class OrderResource extends Resource
 {
     protected static ?string $model = Order::class;
 
-    protected static string|BackedEnum|null $navigationIcon = Heroicon::OutlinedRectangleStack;
+    protected static string|BackedEnum|null $navigationIcon = Heroicon::ShoppingCart;
 
-    protected static ?string $recordTitleAttribute = 'Orden';
+    protected static \UnitEnum|string|null $navigationGroup = 'Ventas';
+
+    protected static ?string $modelLabel = 'Pedido';
+
+    protected static ?string $pluralModelLabel = 'Pedidos';
+
+    protected static ?string $recordTitleAttribute = 'id';
+
+    public static function getGloballySearchableAttributes(): array
+    {
+        return ['id'];
+    }
 
     public static function form(Schema $schema): Schema
     {
